@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conselhos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <center>
+        <h1>Conselhos</h1>
+        <input type="text" id="query" placeholder="Digite uma palavra-chave">
+        <button onclick="buscarComPalavraChave()">Buscar Conselho</button>
+        <button onclick="buscarConselhoAleatorio()">Conselho Aleatório</button>
+        <p id="advice">Digite uma palavra e clique no botão para buscar um conselho.</p>
+    </center>
+
+    <script>
+        async function buscarConselhoAleatorio() {
+            try {
+                const response = await fetch("https://api.adviceslip.com/advice");
+                const data = await response.json();
+
+                if (data.slip) {
+                    const conselhoTraduzido = await traduzirParaPortugues(data.slip.advice);
+                    document.getElementById('advice').innerText = `"${conselhoTraduzido}"`;
+                } else {
+                    document.getElementById('advice').innerText = "Nenhum conselho encontrado.";
+                }
+            } catch (error) {
+                document.getElementById('advice').innerText = "Erro ao buscar conselho. Tente novamente!";
+            }
+        }
+
+        async function buscarComPalavraChave() {
+            const palavraPt = document.getElementById('query').value.trim();
+            if (!palavraPt) {
+                document.getElementById('advice').innerText = "Por favor, digite uma palavra-chave!";
+                return;
+            }
+
+            try {
+                const palavraEn = await traduzirParaIngles(palavraPt);
+
+                const response = await fetch(`https://api.adviceslip.com/advice/search/${palavraEn}`);
+                const data = await response.json();
+
+                if (data.slips) {
+                    const conselhoAleatorio = data.slips[Math.floor(Math.random() * data.slips.length)];
+                    const conselhoTraduzido = await traduzirParaPortugues(conselhoAleatorio.advice);
+                    document.getElementById('advice').innerText = `"${conselhoTraduzido}"`;
+                } else {
+                    document.getElementById('advice').innerText = "Nenhum conselho encontrado para essa palavra.";
+                }
+            } catch (error) {
+                document.getElementById('advice').innerText = "Erro ao buscar conselho. Tente novamente!";
+            }
+        }
+
+        async function traduzirParaIngles(texto) {
+            try {
+                const resposta = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(texto)}&langpair=pt|en`);
+                const dados = await resposta.json();
+                return dados.responseData.translatedText;
+            } catch (error) {
+                return texto; 
+            }
+        }
+
+        async function traduzirParaPortugues(texto) {
+            try {
+                const resposta = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(texto)}&langpair=en|pt`);
+                const dados = await resposta.json();
+                let traducao = dados.responseData.translatedText;
+
+                traducao = traducao.replace("você", "tu").replace("seu", "teu").replace("sua", "tua");
+                return traducao;
+            } catch (error) {
+                return texto; 
+            }
+        }
+    </script>
+
+</body>
+</html>
